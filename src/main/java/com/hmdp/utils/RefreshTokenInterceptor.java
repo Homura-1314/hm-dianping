@@ -30,14 +30,12 @@ public class RefreshTokenInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String token = request.getHeader("authorization");
         if (StrUtil.isBlank(token)) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return false;
+            return true;
         }
         String key = LOGIN_USER_KEY + token;
         Map<Object, Object> entries = stringRedisTemplate.opsForHash().entries(key);
         if (entries.isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return false;
+            return true;
         }
         UserDTO userDTO = BeanUtil.fillBeanWithMap(entries, new UserDTO(), false);
         UserHolder.saveUser(userDTO);
