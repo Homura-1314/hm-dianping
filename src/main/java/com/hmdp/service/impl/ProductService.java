@@ -1,17 +1,18 @@
 package com.hmdp.service.impl;
 
-import com.hmdp.mapper.ShopMapper;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.List;
-
+import com.hmdp.mapper.ShopMapper;
 import static com.hmdp.utils.RedisConstants.BLOOM_FILTER_NAME;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
