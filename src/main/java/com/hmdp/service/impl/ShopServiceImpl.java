@@ -44,6 +44,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     @Resource
     private RedissonClient redissonClient;
     @Resource
+    @SuppressWarnings("unused")
     private CacheClient cacheClient;
 
     @Override

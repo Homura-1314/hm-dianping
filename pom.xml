@@ -64,6 +64,10 @@
             <artifactId>redisson-spring-boot-starter</artifactId>
             <version>3.17.7</version> <!-- 请使用较新版本 -->
         </dependency>
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
