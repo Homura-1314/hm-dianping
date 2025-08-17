@@ -5,9 +5,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 
 import cn.hutool.core.lang.UUID;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
 
 public class SimpleRedisLock implements ILock {
 
@@ -36,7 +36,7 @@ public class SimpleRedisLock implements ILock {
 
     @Override
     public void unlock() {
-       stringRedisTemplate.execute(UNLOCK_SCRIPT, Collections.singletonList(KEY_PREFIX + name), ID_PREFIX +Thread.currentThread().getId());
+    stringRedisTemplate.execute(UNLOCK_SCRIPT, Collections.singletonList(KEY_PREFIX + name), ID_PREFIX + Thread.currentThread().getId());
     }
 
     // @Override
