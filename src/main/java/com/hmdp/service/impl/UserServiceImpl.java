@@ -48,25 +48,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     @Override
     public Result sendcode(String phone, HttpSession session) {
         // 验证手机号格式
-//        if (RegexUtils.isPhoneInvalid(phone)) {
-//            return Result.fail("手机号格式错误");
-//        }
+        if (RegexUtils.isPhoneInvalid(phone)) {
+            return Result.fail("手机号格式错误");
+        }
         // 生成验证码
         String code = RandomUtil.randomNumbers(6);
         stringRedisTemplate.opsForValue().set(LOGIN_CODE_KEY + phone, code, LOGIN_CODE_TTL, TimeUnit.MINUTES);
         // 发送验证码
         log.info("验证码发送成功：{}", code);
-        return Result.ok(code);
+        return Result.ok();
     }
 
     @Override
     public Result login(LoginFormDTO loginForm, HttpSession session) {
         // 验证手机号格式
-//        if (RegexUtils.isPhoneInvalid(loginForm.getPhone())) {
-//            return Result.fail("手机号格式错误");
-//        }
+        if (RegexUtils.isPhoneInvalid(loginForm.getPhone())) {
+            return Result.fail("手机号格式错误");
+        }
         String code = stringRedisTemplate.opsForValue().get(LOGIN_CODE_KEY + loginForm.getPhone());
-        if (code == null || !loginForm.getCode().equals(code)) {
+        if (!loginForm.getCode().equals(code)) {
             return Result.fail("验证码错误或无效");
         }
         User user = query().eq("phone", loginForm.getPhone()).one();

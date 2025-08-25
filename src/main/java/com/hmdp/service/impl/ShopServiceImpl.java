@@ -1,13 +1,22 @@
 package com.hmdp.service.impl;
 
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Resource;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.hmdp.utils.SystemConstants;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.GeoResult;
+import org.springframework.data.geo.GeoResults;
+import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.domain.geo.GeoReference;
+import org.springframework.data.redis.domain.geo.Metrics;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,16 +26,12 @@ import com.hmdp.entity.Shop;
 import com.hmdp.mapper.ShopMapper;
 import com.hmdp.service.IShopService;
 import com.hmdp.utils.CacheClient;
-import static com.hmdp.utils.RedisConstants.BLOOM_FILTER_NAME;
-import static com.hmdp.utils.RedisConstants.CACHE_NULL_TTL;
-import static com.hmdp.utils.RedisConstants.CACHE_SHOP_KEY;
-import static com.hmdp.utils.RedisConstants.CACHE_SHOP_TTL;
-import static com.hmdp.utils.RedisConstants.LOCK_SHOP_KEY;
-import static com.hmdp.utils.RedisConstants.LOCK_SHOP_TTL;
 
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
+
+import static com.hmdp.utils.RedisConstants.*;
 
 /**
  * <p>
@@ -129,6 +134,47 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         updateById(shop);
         stringRedisTemplate.delete(CACHE_SHOP_KEY + id);
         return Result.ok();
+    }
+
+    @Override
+    public Result queryShop(Integer typeId, Integer current, Double x, Double y) {
+        if (x == null || y == null) {
+            Page<Shop> page = query()
+                    .eq("type_id", typeId)
+                    .page(new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE));
+            return Result.ok(page.getRecords());
+        }
+        int from = (current - 1) * SystemConstants.DEFAULT_PAGE_SIZE;
+        int end = current *  SystemConstants.DEFAULT_PAGE_SIZE;
+        String key = SHOP_GEO_KEY + typeId;
+        GeoResults<RedisGeoCommands.GeoLocation<String>> search = stringRedisTemplate.opsForGeo().search(
+                key,
+                GeoReference.fromCoordinate(x, y),
+                new Distance(9000),
+                RedisGeoCommands.GeoRadiusCommandArgs.newGeoRadiusArgs().includeCoordinates().limit(end)
+        );
+        if (search == null) {
+            return Result.ok(Collections.emptyList());
+        }
+        List<GeoResult<RedisGeoCommands.GeoLocation<String>>> resultList = search.getContent();
+        if (resultList.size() <= from) {
+            return Result.ok(Collections.emptyList());
+        }
+        List<Long> ids = new ArrayList<>(resultList.size());
+        Map<String, Double> distanceMap = new HashMap<>();
+        resultList.stream().skip(from).forEach(result -> {
+            String shopId = result.getContent().getName();
+            ids.add(Long.valueOf(shopId));
+            Distance distance = result.getDistance();
+            double distanceInKm = distance.in(Metrics.KILOMETERS).getValue();
+            distanceMap.put(shopId, distanceInKm);
+        });
+        String idstr = StrUtil.join(",", ids);
+        List<Shop> shopList = query().in("id", ids).last("order by field(id, " + idstr + ")").list();
+        shopList.forEach(shop -> {
+            shop.setDistance(distanceMap.get(shop.getId().toString()));
+        });
+        return Result.ok(shopList);
     }
 
 }
