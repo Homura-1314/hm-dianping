@@ -19,6 +19,7 @@ import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.Blog;
 import com.hmdp.service.IBlogService;
+import com.hmdp.service.IUserService;
 import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
 
@@ -36,6 +37,8 @@ public class BlogController {
 
     @Resource
     private IBlogService blogService;
+    @Resource
+    private IUserService userService;
 
     @PostMapping
     public Result saveBlog(@RequestBody Blog blog) {
@@ -90,6 +93,11 @@ public class BlogController {
     @GetMapping("/of/follow")
     public Result queryBlogOfFollow(@RequestParam("lastId") Long max, @RequestParam(defaultValue = "0") Integer offset){
         return blogService.queryBlogOfFollow(max, offset);
+    }
+
+    @PostMapping("/sign")
+    public Result sign(){
+        return userService.sign();
     }
 
 }
